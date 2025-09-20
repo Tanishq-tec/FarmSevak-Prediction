@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pickle
 import numpy as np
@@ -28,12 +27,18 @@ def safe_to_float(x):
             except Exception:
                 return np.nan
 
+# --- cache translator ---
+@st.cache_resource
+def get_translator(target_lang="en"):
+    return GoogleTranslator(source="auto", target=target_lang)
+
 def translate_text(text, target_lang="en"):
-    """Translate text using GoogleTranslator"""
+    """Translate text using cached GoogleTranslator"""
     try:
         if not text:
             return ""
-        return GoogleTranslator(source="auto", target=target_lang).translate(text)
+        translator = get_translator(target_lang)
+        return translator.translate(text)
     except Exception:
         return text
 
@@ -60,8 +65,10 @@ TARGET_LANG = lang_map[selected_lang]
 MODEL_URL = "https://www.dropbox.com/scl/fi/rqmel07pl1hswv4eutgly/Yield_prediction.pk1?rlkey=i2fk2n9ypvgt6i8jyfidqnlr4&st=ejb97kr9&dl=1"
 MODEL_PATH = "Yield_Prediction.pk1"
 
-if not os.path.exists(MODEL_PATH):
-    with st.spinner(translate_text("Downloading model...", TARGET_LANG)):
+# --- cache model loading ---
+@st.cache_resource
+def load_model():
+    if not os.path.exists(MODEL_PATH):
         try:
             r = requests.get(MODEL_URL, stream=True)
             r.raise_for_status()
@@ -69,17 +76,18 @@ if not os.path.exists(MODEL_PATH):
                 for chunk in r.iter_content(chunk_size=8192):
                     f.write(chunk)
         except Exception as e:
-            st.error(translate_text("Failed to download model from Dropbox.", TARGET_LANG))
+            st.error("Failed to download model from Dropbox.")
             st.exception(e)
             st.stop()
+    try:
+        with open(MODEL_PATH, "rb") as f:
+            return pickle.load(f)
+    except Exception as e:
+        st.error("Error loading model file.")
+        st.exception(e)
+        st.stop()
 
-try:
-    with open(MODEL_PATH, "rb") as f:
-        model = pickle.load(f)
-except Exception as e:
-    st.error(translate_text("Error loading model file.", TARGET_LANG))
-    st.exception(e)
-    st.stop()
+model = load_model()
 
 # -------------------------
 # Header + Inputs
