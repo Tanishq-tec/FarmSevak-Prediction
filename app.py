@@ -1,4 +1,4 @@
-Hugging Face's logo
+Hugging Faces logo
 Hugging Face
 Models
 Datasets
