@@ -1,3 +1,45 @@
+Hugging Face's logo
+Hugging Face
+Models
+Datasets
+Spaces
+Docs
+Pricing
+
+
+
+Spaces:
+
+Tanishq-tec
+/
+FarmSevak-Predictor 
+
+like
+0
+
+App
+Files
+Community
+Settings
+FarmSevak-Predictor
+/
+app.py
+
+Tanishq-tec's picture
+Tanishq-tec
+Rename app .py to app.py
+e60c61e
+verified
+less than a minute ago
+raw
+
+Copy download link
+history
+blame
+edit
+delete
+
+13.7 kB
 import streamlit as st
 import pickle
 import numpy as np
@@ -10,6 +52,13 @@ from langchain_huggingface import HuggingFaceEndpoint , ChatHuggingFace
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
+# -------------------------
+# Hugging Face Token Setup (ADDED)
+# -------------------------
+hf_token = st.secrets.get("HUGGINGFACEHUB_API_TOKEN", os.getenv("HUGGINGFACEHUB_API_TOKEN"))
+if not hf_token:
+    st.error("❌ Hugging Face API token not found! Please add it in Streamlit secrets or environment variables.")
+    st.stop()
 
     
 
@@ -257,7 +306,7 @@ if st.button("🔎 " + translate_text("Predict", TARGET_LANG)):
     st.success("✅ " + translate_text("Done — calculations shown above.", TARGET_LANG))
 
     # ---------------- LLM Setup ----------------
-    llm = HuggingFaceEndpoint(repo_id="openai/gpt-oss-20b")
+    llm = HuggingFaceEndpoint(repo_id="openai/gpt-oss-20b", huggingfacehub_api_token=hf_token)  # FIXED
     chat_model = ChatHuggingFace(llm=llm)
     parser = StrOutputParser()
 
@@ -270,13 +319,11 @@ if st.button("🔎 " + translate_text("Predict", TARGET_LANG)):
         ],
         template="""
 You are an agricultural expert. Based on the details below, give a farmer-friendly recommendation.
-
 Details:
 - Crop: {crop}, Season: {season}, State: {state}, Area: {area} ha
 - Rainfall: {annual_rain} mm, Temp: {temperature} °C, Humidity: {humidity} %
 - Soil: {soil_type}, pH: {ph}, N: {n_percent}, P: {p_percent}, K: {k_percent}
 - Predicted Yield: {total_yield} tons, Fertilizer: {fertilizer} kg, Pesticide: {pesticide} L
-
 👉 Task: Give **max 8 short bullet points** with advice on crop choice, fertilizer, pesticide, irrigation, soil care, risks, and profit.
 """
     )
@@ -349,6 +396,3 @@ Details:
         st.error(translate_text("LLM recommendation failed.", TARGET_LANG))
         st.exception(e)
 
-
-
-    
